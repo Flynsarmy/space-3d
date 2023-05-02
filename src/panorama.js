@@ -16,8 +16,8 @@ module.exports = function(width, height) {
   var self = this;
 
   self.initialize = function() {
-    self.width = width * 3;
-    self.height = height * 3;
+    self.width = width;
+    self.height = height;
 
     // Initialize the offscreen rendering canvas.
     self.canvas = document.createElement("canvas");
@@ -33,7 +33,6 @@ module.exports = function(width, height) {
     //   self.gl.ZERO,
     //   self.gl.ONE
     // );
-
 
     // Load the programs.
     self.Shader = initializeShader(
@@ -111,39 +110,39 @@ module.exports = function(width, height) {
 
 function initializeShader(gl, source_vs, source_frag)
 {
-    var ErrorMessage = "Initializing Shader Program";
-    var shader_vs = gl.createShader(gl.VERTEX_SHADER);
-    var shader_frag = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(shader_vs, source_vs);
-    gl.shaderSource(shader_frag, source_frag);
-    gl.compileShader(shader_vs);
-    gl.compileShader(shader_frag);
-    var error = false;
-    if (!gl.getShaderParameter(shader_vs, gl.COMPILE_STATUS)) {
-        ErrorMessage += gl.getShaderInfoLog(shader_vs);
-        error = true;
-    }
-    if (!gl.getShaderParameter(shader_frag, gl.COMPILE_STATUS)) {
-        ErrorMessage += gl.getShaderInfoLog(shader_frag);
-        error = true;
-    }
-    var program = gl.createProgram();
-    var ret = gl.getProgramInfoLog(program);
-    if (ret != "")
-        ErrorMessage += ret;
-    gl.attachShader(program, shader_vs);
-    gl.attachShader(program, shader_frag);
-    if (gl.linkProgram(program) == 0) {
-        ErrorMessage += "\r\ngl.linkProgram(program) failed with error code 0.";
-        error = true;
-    }
-    if (error) {
-        console.log(ErrorMessage + ' ...failed to initialize shader.');
-        return false;
-    } else {
-        console.log(ErrorMessage + ' ...shader successfully created.');
-        return program;
-    }
+  var ErrorMessage = "Initializing Shader Program";
+  var shader_vs = gl.createShader(gl.VERTEX_SHADER);
+  var shader_frag = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(shader_vs, source_vs);
+  gl.shaderSource(shader_frag, source_frag);
+  gl.compileShader(shader_vs);
+  gl.compileShader(shader_frag);
+  var error = false;
+  if (!gl.getShaderParameter(shader_vs, gl.COMPILE_STATUS)) {
+      ErrorMessage += gl.getShaderInfoLog(shader_vs);
+      error = true;
+  }
+  if (!gl.getShaderParameter(shader_frag, gl.COMPILE_STATUS)) {
+      ErrorMessage += gl.getShaderInfoLog(shader_frag);
+      error = true;
+  }
+  var program = gl.createProgram();
+  var ret = gl.getProgramInfoLog(program);
+  if (ret != "")
+      ErrorMessage += ret;
+  gl.attachShader(program, shader_vs);
+  gl.attachShader(program, shader_frag);
+  if (gl.linkProgram(program) == 0) {
+      ErrorMessage += "\r\ngl.linkProgram(program) failed with error code 0.";
+      error = true;
+  }
+  if (error) {
+      console.log(ErrorMessage + ' ...failed to initialize shader.');
+      return false;
+  } else {
+      console.log(ErrorMessage + ' ...shader successfully created.');
+      return program;
+  }
 }
 
 

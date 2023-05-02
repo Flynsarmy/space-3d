@@ -30,6 +30,7 @@ window.onload = function() {
     this.nebulae =
       params.nebulae === undefined ? true : params.nebulae === "true";
     this.resolution = parseInt(params.resolution) || 1024;
+    this.panoramaResolution = parseInt(params.panoramaResolution) || 8192;
     this.animationSpeed =
       params.animationSpeed === undefined
         ? 1.0
@@ -50,7 +51,7 @@ window.onload = function() {
       });
     };
     this.saveSkyboxPanorama = function() {
-      var panorama = new Panorama(4096, 4096);
+      var panorama = new Panorama(this.panoramaResolution, this.panoramaResolution);
       panorama.download();
     };
     this._saveCubemap = function() {
@@ -113,6 +114,7 @@ window.onload = function() {
     .onChange(renderTextures);
   gui.add(menu, "animationSpeed", 0, 10).name("Animation speed");
   gui.add(menu, "saveSkyboxCubemap").name("Download Skybox Cubemap");
+  gui.add(menu, "panoramaResolution").name("Panorama Resolution");
   gui.add(menu, "saveSkyboxPanorama").name("Download Skybox Panorama");
 
   document.body.appendChild(gui.domElement);
@@ -155,6 +157,7 @@ window.onload = function() {
       sun: menu.sun,
       nebulae: menu.nebulae,
       resolution: menu.resolution,
+      panoramaResolution: menu.panoramaResolution,
       animationSpeed: menu.animationSpeed
     })).toString();
   }
@@ -181,7 +184,8 @@ window.onload = function() {
       stars: menu.stars,
       sun: menu.sun,
       nebulae: menu.nebulae,
-      resolution: menu.resolution
+      resolution: menu.resolution,
+      panoramaResolution: menu.panoramaResolution
     });
     skybox.setTextures(textures);
 
