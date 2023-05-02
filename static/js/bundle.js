@@ -1932,192 +1932,11 @@ function numberIsNaN (obj) {
 
 }).call(this)}).call(this,require("buffer").Buffer)
 },{"base64-js":1,"buffer":2,"ieee754":15}],3:[function(require,module,exports){
-/* FileSaver.js
- * A saveAs() FileSaver implementation.
- * 1.3.4
- * 2018-01-12 13:14:0
- *
- * By Eli Grey, http://eligrey.com
- * License: MIT
- *   See https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md
- */
+(function (global){(function (){
+(function(a,b){if("function"==typeof define&&define.amd)define([],b);else if("undefined"!=typeof exports)b();else{b(),a.FileSaver={exports:{}}.exports}})(this,function(){"use strict";function b(a,b){return"undefined"==typeof b?b={autoBom:!1}:"object"!=typeof b&&(console.warn("Deprecated: Expected third argument to be a object"),b={autoBom:!b}),b.autoBom&&/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(a.type)?new Blob(["\uFEFF",a],{type:a.type}):a}function c(a,b,c){var d=new XMLHttpRequest;d.open("GET",a),d.responseType="blob",d.onload=function(){g(d.response,b,c)},d.onerror=function(){console.error("could not download file")},d.send()}function d(a){var b=new XMLHttpRequest;b.open("HEAD",a,!1);try{b.send()}catch(a){}return 200<=b.status&&299>=b.status}function e(a){try{a.dispatchEvent(new MouseEvent("click"))}catch(c){var b=document.createEvent("MouseEvents");b.initMouseEvent("click",!0,!0,window,0,0,0,80,20,!1,!1,!1,!1,0,null),a.dispatchEvent(b)}}var f="object"==typeof window&&window.window===window?window:"object"==typeof self&&self.self===self?self:"object"==typeof global&&global.global===global?global:void 0,a=f.navigator&&/Macintosh/.test(navigator.userAgent)&&/AppleWebKit/.test(navigator.userAgent)&&!/Safari/.test(navigator.userAgent),g=f.saveAs||("object"!=typeof window||window!==f?function(){}:"download"in HTMLAnchorElement.prototype&&!a?function(b,g,h){var i=f.URL||f.webkitURL,j=document.createElement("a");g=g||b.name||"download",j.download=g,j.rel="noopener","string"==typeof b?(j.href=b,j.origin===location.origin?e(j):d(j.href)?c(b,g,h):e(j,j.target="_blank")):(j.href=i.createObjectURL(b),setTimeout(function(){i.revokeObjectURL(j.href)},4E4),setTimeout(function(){e(j)},0))}:"msSaveOrOpenBlob"in navigator?function(f,g,h){if(g=g||f.name||"download","string"!=typeof f)navigator.msSaveOrOpenBlob(b(f,h),g);else if(d(f))c(f,g,h);else{var i=document.createElement("a");i.href=f,i.target="_blank",setTimeout(function(){e(i)})}}:function(b,d,e,g){if(g=g||open("","_blank"),g&&(g.document.title=g.document.body.innerText="downloading..."),"string"==typeof b)return c(b,d,e);var h="application/octet-stream"===b.type,i=/constructor/i.test(f.HTMLElement)||f.safari,j=/CriOS\/[\d]+/.test(navigator.userAgent);if((j||h&&i||a)&&"undefined"!=typeof FileReader){var k=new FileReader;k.onloadend=function(){var a=k.result;a=j?a:a.replace(/^data:[^;]*;/,"data:attachment/file;"),g?g.location.href=a:location=a,g=null},k.readAsDataURL(b)}else{var l=f.URL||f.webkitURL,m=l.createObjectURL(b);g?g.location=m:location.href=m,g=null,setTimeout(function(){l.revokeObjectURL(m)},4E4)}});f.saveAs=g.saveAs=g,"undefined"!=typeof module&&(module.exports=g)});
 
-/*global self */
-/*jslint bitwise: true, indent: 4, laxbreak: true, laxcomma: true, smarttabs: true, plusplus: true */
 
-/*! @source http://purl.eligrey.com/github/FileSaver.js/blob/master/FileSaver.js */
-
-var saveAs = saveAs || (function(view) {
-	"use strict";
-	// IE <10 is explicitly unsupported
-	if (typeof view === "undefined" || typeof navigator !== "undefined" && /MSIE [1-9]\./.test(navigator.userAgent)) {
-		return;
-	}
-	var
-		  doc = view.document
-		  // only get URL when necessary in case Blob.js hasn't overridden it yet
-		, get_URL = function() {
-			return view.URL || view.webkitURL || view;
-		}
-		, save_link = doc.createElementNS("http://www.w3.org/1999/xhtml", "a")
-		, can_use_save_link = "download" in save_link
-		, click = function(node) {
-			var event = new MouseEvent("click");
-			node.dispatchEvent(event);
-		}
-		, is_safari = /constructor/i.test(view.HTMLElement) || view.safari
-		, is_chrome_ios =/CriOS\/[\d]+/.test(navigator.userAgent)
-		, throw_outside = function(ex) {
-			(view.setImmediate || view.setTimeout)(function() {
-				throw ex;
-			}, 0);
-		}
-		, force_saveable_type = "application/octet-stream"
-		// the Blob API is fundamentally broken as there is no "downloadfinished" event to subscribe to
-		, arbitrary_revoke_timeout = 1000 * 40 // in ms
-		, revoke = function(file) {
-			var revoker = function() {
-				if (typeof file === "string") { // file is an object URL
-					get_URL().revokeObjectURL(file);
-				} else { // file is a File
-					file.remove();
-				}
-			};
-			setTimeout(revoker, arbitrary_revoke_timeout);
-		}
-		, dispatch = function(filesaver, event_types, event) {
-			event_types = [].concat(event_types);
-			var i = event_types.length;
-			while (i--) {
-				var listener = filesaver["on" + event_types[i]];
-				if (typeof listener === "function") {
-					try {
-						listener.call(filesaver, event || filesaver);
-					} catch (ex) {
-						throw_outside(ex);
-					}
-				}
-			}
-		}
-		, auto_bom = function(blob) {
-			// prepend BOM for UTF-8 XML and text/* types (including HTML)
-			// note: your browser will automatically convert UTF-16 U+FEFF to EF BB BF
-			if (/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(blob.type)) {
-				return new Blob([String.fromCharCode(0xFEFF), blob], {type: blob.type});
-			}
-			return blob;
-		}
-		, FileSaver = function(blob, name, no_auto_bom) {
-			if (!no_auto_bom) {
-				blob = auto_bom(blob);
-			}
-			// First try a.download, then web filesystem, then object URLs
-			var
-				  filesaver = this
-				, type = blob.type
-				, force = type === force_saveable_type
-				, object_url
-				, dispatch_all = function() {
-					dispatch(filesaver, "writestart progress write writeend".split(" "));
-				}
-				// on any filesys errors revert to saving with object URLs
-				, fs_error = function() {
-					if ((is_chrome_ios || (force && is_safari)) && view.FileReader) {
-						// Safari doesn't allow downloading of blob urls
-						var reader = new FileReader();
-						reader.onloadend = function() {
-							var url = is_chrome_ios ? reader.result : reader.result.replace(/^data:[^;]*;/, 'data:attachment/file;');
-							var popup = view.open(url, '_blank');
-							if(!popup) view.location.href = url;
-							url=undefined; // release reference before dispatching
-							filesaver.readyState = filesaver.DONE;
-							dispatch_all();
-						};
-						reader.readAsDataURL(blob);
-						filesaver.readyState = filesaver.INIT;
-						return;
-					}
-					// don't create more object URLs than needed
-					if (!object_url) {
-						object_url = get_URL().createObjectURL(blob);
-					}
-					if (force) {
-						view.location.href = object_url;
-					} else {
-						var opened = view.open(object_url, "_blank");
-						if (!opened) {
-							// Apple does not allow window.open, see https://developer.apple.com/library/safari/documentation/Tools/Conceptual/SafariExtensionGuide/WorkingwithWindowsandTabs/WorkingwithWindowsandTabs.html
-							view.location.href = object_url;
-						}
-					}
-					filesaver.readyState = filesaver.DONE;
-					dispatch_all();
-					revoke(object_url);
-				}
-			;
-			filesaver.readyState = filesaver.INIT;
-
-			if (can_use_save_link) {
-				object_url = get_URL().createObjectURL(blob);
-				setTimeout(function() {
-					save_link.href = object_url;
-					save_link.download = name;
-					click(save_link);
-					dispatch_all();
-					revoke(object_url);
-					filesaver.readyState = filesaver.DONE;
-				});
-				return;
-			}
-
-			fs_error();
-		}
-		, FS_proto = FileSaver.prototype
-		, saveAs = function(blob, name, no_auto_bom) {
-			return new FileSaver(blob, name || blob.name || "download", no_auto_bom);
-		}
-	;
-	// IE 10+ (native saveAs)
-	if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob) {
-		return function(blob, name, no_auto_bom) {
-			name = name || blob.name || "download";
-
-			if (!no_auto_bom) {
-				blob = auto_bom(blob);
-			}
-			return navigator.msSaveOrOpenBlob(blob, name);
-		};
-	}
-
-	FS_proto.abort = function(){};
-	FS_proto.readyState = FS_proto.INIT = 0;
-	FS_proto.WRITING = 1;
-	FS_proto.DONE = 2;
-
-	FS_proto.error =
-	FS_proto.onwritestart =
-	FS_proto.onprogress =
-	FS_proto.onwrite =
-	FS_proto.onabort =
-	FS_proto.onerror =
-	FS_proto.onwriteend =
-		null;
-
-	return saveAs;
-}(
-	   typeof self !== "undefined" && self
-	|| typeof window !== "undefined" && window
-	|| this
-));
-
-if (typeof module !== "undefined" && module.exports) {
-	module.exports.saveAs = saveAs;
-} else if ((typeof define !== "undefined" && define !== null) && (define.amd !== null)) {
-	define("FileSaver.js", function() {
-		return saveAs;
-	});
-}
-
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],4:[function(require,module,exports){
 "use strict";
 
@@ -10995,10 +10814,11 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
 "use strict";
 
 var glm = require("gl-matrix");
-var saveAs = require("filesaver.js").saveAs;
+var saveAs = require("file-saver").saveAs;
 var JSZip = require("jszip");
 var Space3D = require("./space-3d.js");
 var Skybox = require("./skybox.js");
+var Panorama = require("./panorama.js");
 
 var resolution = 1024;
 
@@ -11023,7 +10843,7 @@ window.onload = function() {
       params.animationSpeed === undefined
         ? 1.0
         : parseFloat(params.animationSpeed);
-    this.saveSkybox = function() {
+    this.saveSkyboxCubemap = function() {
       const zip = new JSZip();
       for (const name of ["front", "back", "left", "right", "top", "bottom"]) {
         const canvas = document.getElementById(`texture-${name}`);
@@ -11037,6 +10857,10 @@ window.onload = function() {
       zip.generateAsync({ type: "blob" }).then(blob => {
         saveAs(blob, "skybox.zip");
       });
+    };
+    this.saveSkyboxPanorama = function() {
+      var panorama = new Panorama(4096, 4096);
+      panorama.download();
     };
     this._saveCubemap = function() {
       const cubemapCanvas = document.createElement('canvas');
@@ -11097,7 +10921,8 @@ window.onload = function() {
     .name("Resolution")
     .onChange(renderTextures);
   gui.add(menu, "animationSpeed", 0, 10).name("Animation speed");
-  gui.add(menu, "saveSkybox").name("Download skybox");
+  gui.add(menu, "saveSkyboxCubemap").name("Download Skybox Cubemap");
+  gui.add(menu, "saveSkyboxPanorama").name("Download Skybox Panorama");
 
   document.body.appendChild(gui.domElement);
   gui.domElement.style.position = "fixed";
@@ -11233,7 +11058,202 @@ function generateRandomSeed() {
   return (Math.random() * 1000000000000000000).toString(36);
 }
 ``
-},{"./skybox.js":24,"./space-3d.js":25,"filesaver.js":3,"gl-matrix":5,"jszip":16}],24:[function(require,module,exports){
+},{"./panorama.js":24,"./skybox.js":25,"./space-3d.js":26,"file-saver":3,"gl-matrix":5,"jszip":16}],24:[function(require,module,exports){
+// jshint -W097
+// jshint undef: true, unused: true
+/* globals require,document,__dirname,Float32Array,module*/
+
+"use strict";
+
+
+var glm = require("gl-matrix");
+var webgl = require("./webgl.js");
+var util = require("./util.js");
+var rng = require("rng");
+
+var NSTARS = 100000;
+
+module.exports = function(width, height) {
+  var self = this;
+
+  self.initialize = function() {
+    self.width = width * 3;
+    self.height = height * 3;
+
+    // Initialize the offscreen rendering canvas.
+    self.canvas = document.createElement("canvas");
+    self.canvas.width = self.width;
+    self.canvas.height = self.height;
+
+    // Initialize the gl context.
+    self.gl = self.canvas.getContext("webgl2");
+    // self.gl.enable(self.gl.BLEND);
+    // self.gl.blendFuncSeparate(
+    //   self.gl.SRC_ALPHA,
+    //   self.gl.ONE_MINUS_SRC_ALPHA,
+    //   self.gl.ZERO,
+    //   self.gl.ONE
+    // );
+
+
+    // Load the programs.
+    self.Shader = initializeShader(
+      self.gl,
+      "precision mediump float;\nattribute vec4 a_Position;\nattribute vec4 a_Color;\nvarying vec4 color;\nvoid main() {\ngl_Position = a_Position;\n}\n",
+      "precision mediump float;\nvarying vec4 color;\nuniform float u_time;\nuniform vec2 u_resolution;\nuniform vec2 u_mouse;\n//uniform sampler2D u_texture1;\nuniform samplerCube u_cubemap1;\nuniform bool ef_sqrt;\nuniform bool ef_pow;\nuniform bool stop_mov;\nuniform bool sphere_map;\n\n#define iResolution u_resolution\n#define iTime u_time\n#define iMouse u_mouse\n#define iChannel0 u_cubemap1\n\nfloat pi = 3.1415926536;\n\nvoid get_panorama( out vec4 fragColor, in vec2 P ) {\nfloat theta = (1.0 - P.y) * pi;\nfloat phi   = P.x * pi * 2.0;\nif(!stop_mov)phi += sin(iTime/5.)*pi;\nvec3 dir = vec3(sin(theta) * sin(phi), cos(theta), sin(theta) * cos(phi));\nfragColor = (textureCube(iChannel0, dir));\nif(ef_sqrt)\nfragColor=sqrt(fragColor);\nif(ef_pow)\nfragColor*=fragColor;\nfragColor.a=1.;\n}\n\nvec3 SetCamera(vec2 uv)\n{\n    vec3 ro = vec3(0.,2.,0.);\n    vec2 m = (iMouse.xy*2.5)/iResolution.xy;\n    m.x=-m.x;\n    uv.y=-uv.y;\n    vec3 rd = normalize(vec3(uv, 1.5));\n    mat3 rotX = mat3(1.0, 0.0, 0.0, 0.0, cos(m.y), sin(m.y), 0.0, -sin(m.y), cos(m.y));\n    mat3 rotY = mat3(cos(m.x), 0.0, -sin(m.x), 0.0, 1.0, 0.0, sin(m.x), 0.0, cos(m.x));\n    rd = (rotY * rotX) * rd;\n    return rd;\n}\n\nvec2 uv_sphere(vec3 v)\n{\n\treturn vec2(0.5 + atan(v.z, v.x) / (2.0 * pi), acos(v.y) / pi);\n}\n\nvoid to_sphere( out vec4 fragColor, in vec2 fragCoord )\n{\n    vec2 P = fragCoord.xy / iResolution.y-(iResolution.xy/iResolution.y)/2.;\n\tvec3 dir=SetCamera(P);\n    get_panorama(fragColor, uv_sphere(dir));\n}\n\nvoid mainImage( out vec4 fragColor, in vec2 fragCoord) {\nvec2 P = fragCoord.xy / iResolution.xy;\nif(!sphere_map)get_panorama(fragColor,P);\nelse to_sphere(fragColor,fragCoord);\nfragColor.a=1.;\n}\n\nvoid main( void ) {\nvec4 fragColor=vec4(0.);\nmainImage(fragColor,gl_FragCoord.xy);\ngl_FragColor = fragColor;\n}\n"
+    );
+
+    var vertices = new Float32Array([
+      -1.0, 1.0, 0.0,
+      -1.0, -1.0, 0.0,
+      1.0, -1.0, 0.0,
+      1.0, 1.0, 0.0,
+    ]);
+    var indices = [0, 1, 2, 2, 3, 0];
+    var vertexbuffer = self.gl.createBuffer();
+    var indexbuffer = self.gl.createBuffer();
+    self.gl.bindBuffer(self.gl.ARRAY_BUFFER, vertexbuffer);
+    self.gl.bufferData(self.gl.ARRAY_BUFFER, new Float32Array(vertices), self.gl.STATIC_DRAW);
+    self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
+    self.gl.bindBuffer(self.gl.ELEMENT_ARRAY_BUFFER, indexbuffer);
+    self.gl.bufferData(self.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), self.gl.STATIC_DRAW);
+    self.gl.bindBuffer(self.gl.ELEMENT_ARRAY_BUFFER, null);
+    self.gl.bindBuffer(self.gl.ARRAY_BUFFER, vertexbuffer);
+    self.gl.bindBuffer(self.gl.ELEMENT_ARRAY_BUFFER, indexbuffer);
+    self.gl.viewport(0, 0, self.width, self.height);
+    var coords = self.gl.getAttribLocation(self.Shader, "a_Position");
+    self.gl.vertexAttribPointer(coords, 3, self.gl.FLOAT, false, 0, 0);
+    self.gl.enableVertexAttribArray(coords);
+  };
+
+  self.download = function() {
+      var timex = self.width;
+
+      self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      self.gl.clear(self.gl.COLOR_BUFFER_BIT);
+      self.gl.useProgram(self.Shader);
+      self.gl.uniform1f(self.gl.getUniformLocation(self.Shader, "u_time"), timex);
+      self.gl.uniform2f(self.gl.getUniformLocation(self.Shader, "u_resolution"), self.width, self.height);
+      self.gl.uniform2f(self.gl.getUniformLocation(self.Shader, "u_mouse"), 0, 0);
+      self.gl.uniform1i(self.gl.getUniformLocation(self.Shader, "ef_sqrt"), 0);
+      self.gl.uniform1i(self.gl.getUniformLocation(self.Shader, "ef_pow"), 0);
+      self.gl.uniform1i(self.gl.getUniformLocation(self.Shader, "stop_mov"), 1);
+      self.gl.uniform1i(self.gl.getUniformLocation(self.Shader, "sphere_map"), 0);
+      //self.gl.bindTexture(self.gl.TEXTURE_CUBE_MAP, cubemap_tex);
+
+
+      if (self.cubemapTex) {
+        self.gl.deleteTexture(self.cubemapTex);
+      } else {
+        self.cubemapTex = self.gl.createTexture();
+        self.gl.bindTexture(self.gl.TEXTURE_CUBE_MAP, self.cubemapTex);
+      }
+
+      self.gl.uniform1i(self.gl.getUniformLocation(self.Shader, 'u_cubemap1'), 0);
+
+      loadCubemap(self.gl);
+
+      self.gl.drawElements(self.gl.TRIANGLES, 6, self.gl.UNSIGNED_SHORT, 0);
+
+      var canvas = self.canvas;
+      var MIME_TYPE = "image/png";
+      var imgURL = canvas.toDataURL(MIME_TYPE);
+      var dlLink = document.createElement('a');
+      dlLink.download = "panorama_image.png";
+      dlLink.href = imgURL;
+      dlLink.dataset.downloadurl = [MIME_TYPE, dlLink.download, dlLink.href].join(':');
+      document.body.appendChild(dlLink);
+      dlLink.click();
+      document.body.removeChild(dlLink);
+  }
+
+  self.initialize();
+};
+
+function initializeShader(gl, source_vs, source_frag)
+{
+    var ErrorMessage = "Initializing Shader Program";
+    var shader_vs = gl.createShader(gl.VERTEX_SHADER);
+    var shader_frag = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(shader_vs, source_vs);
+    gl.shaderSource(shader_frag, source_frag);
+    gl.compileShader(shader_vs);
+    gl.compileShader(shader_frag);
+    var error = false;
+    if (!gl.getShaderParameter(shader_vs, gl.COMPILE_STATUS)) {
+        ErrorMessage += gl.getShaderInfoLog(shader_vs);
+        error = true;
+    }
+    if (!gl.getShaderParameter(shader_frag, gl.COMPILE_STATUS)) {
+        ErrorMessage += gl.getShaderInfoLog(shader_frag);
+        error = true;
+    }
+    var program = gl.createProgram();
+    var ret = gl.getProgramInfoLog(program);
+    if (ret != "")
+        ErrorMessage += ret;
+    gl.attachShader(program, shader_vs);
+    gl.attachShader(program, shader_frag);
+    if (gl.linkProgram(program) == 0) {
+        ErrorMessage += "\r\ngl.linkProgram(program) failed with error code 0.";
+        error = true;
+    }
+    if (error) {
+        console.log(ErrorMessage + ' ...failed to initialize shader.');
+        return false;
+    } else {
+        console.log(ErrorMessage + ' ...shader successfully created.');
+        return program;
+    }
+}
+
+
+function loadCubemap(gl, resolution) {
+  const back_tex = document.getElementById('texture-left');
+  const top_tex = document.getElementById('texture-top');
+  const right_tex = document.getElementById('texture-front');
+  const bottom_tex = document.getElementById('texture-bottom');
+  const front_tex = document.getElementById('texture-right');
+  const left_tex = document.getElementById('texture-back');
+  const width = left_tex.width;
+  const height = left_tex.height;
+  var dataTypedArray;
+
+  dataTypedArray = new Uint8Array(rotate_img(left_tex, 0));
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, dataTypedArray);
+
+  dataTypedArray = new Uint8Array(rotate_img(right_tex, 0));
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, dataTypedArray);
+
+  dataTypedArray = new Uint8Array(rotate_img(top_tex, 90));
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, dataTypedArray);
+
+  dataTypedArray = new Uint8Array(rotate_img(bottom_tex, -90));
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, dataTypedArray);
+
+  dataTypedArray = new Uint8Array(rotate_img(front_tex, 0));
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, dataTypedArray);
+
+  dataTypedArray = new Uint8Array(rotate_img(back_tex, 0));
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, dataTypedArray);
+
+  gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+};
+
+var ctmp = document.createElement("canvas");
+function rotate_img(img, angle) {
+    ctmp.width = img.width;
+    ctmp.height = img.height;
+    var ctx = ctmp.getContext("2d");
+    ctx.translate(ctmp.width/2,ctmp.height/2);
+    ctx.rotate(angle*Math.PI/180);
+    ctx.drawImage(img, -img.width/2, -img.width/2);
+    ctx.restore();
+    var imageData = ctx.getImageData(0,0,img.width,img.height);
+    return imageData.data.buffer;
+}
+},{"./util.js":27,"./webgl.js":28,"gl-matrix":5,"rng":21}],25:[function(require,module,exports){
 // jshint -W097
 // jshint undef: true, unused: true
 /* globals require,__dirname,Float32Array,module*/
@@ -11338,7 +11358,7 @@ function buildQuad(gl, program) {
     return renderable;
 }
 
-},{"./util.js":26,"./webgl.js":27,"gl-matrix":5}],25:[function(require,module,exports){
+},{"./util.js":27,"./webgl.js":28,"gl-matrix":5}],26:[function(require,module,exports){
 // jshint -W097
 // jshint undef: true, unused: true
 /* globals require,document,__dirname,Float32Array,module*/
@@ -11795,7 +11815,7 @@ function hashcode(str) {
   return hash;
 }
 
-},{"./util.js":26,"./webgl.js":27,"gl-matrix":5,"rng":21}],26:[function(require,module,exports){
+},{"./util.js":27,"./webgl.js":28,"gl-matrix":5,"rng":21}],27:[function(require,module,exports){
 (function (Buffer){(function (){
 // jshint -W097
 // jshint undef: true, unused: true
@@ -11815,7 +11835,7 @@ module.exports.loadProgram = function(gl, source) {
 };
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"./webgl.js":27,"buffer":2}],27:[function(require,module,exports){
+},{"./webgl.js":28,"buffer":2}],28:[function(require,module,exports){
 
 /*...........................................................................*/
 function buildAttribs(gl, layout) {

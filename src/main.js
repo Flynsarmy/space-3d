@@ -5,10 +5,11 @@
 "use strict";
 
 var glm = require("gl-matrix");
-var saveAs = require("filesaver.js").saveAs;
+var saveAs = require("file-saver").saveAs;
 var JSZip = require("jszip");
 var Space3D = require("./space-3d.js");
 var Skybox = require("./skybox.js");
+var Panorama = require("./panorama.js");
 
 var resolution = 1024;
 
@@ -33,7 +34,7 @@ window.onload = function() {
       params.animationSpeed === undefined
         ? 1.0
         : parseFloat(params.animationSpeed);
-    this.saveSkybox = function() {
+    this.saveSkyboxCubemap = function() {
       const zip = new JSZip();
       for (const name of ["front", "back", "left", "right", "top", "bottom"]) {
         const canvas = document.getElementById(`texture-${name}`);
@@ -47,6 +48,10 @@ window.onload = function() {
       zip.generateAsync({ type: "blob" }).then(blob => {
         saveAs(blob, "skybox.zip");
       });
+    };
+    this.saveSkyboxPanorama = function() {
+      var panorama = new Panorama(4096, 4096);
+      panorama.download();
     };
     this._saveCubemap = function() {
       const cubemapCanvas = document.createElement('canvas');
@@ -107,7 +112,8 @@ window.onload = function() {
     .name("Resolution")
     .onChange(renderTextures);
   gui.add(menu, "animationSpeed", 0, 10).name("Animation speed");
-  gui.add(menu, "saveSkybox").name("Download skybox");
+  gui.add(menu, "saveSkyboxCubemap").name("Download Skybox Cubemap");
+  gui.add(menu, "saveSkyboxPanorama").name("Download Skybox Panorama");
 
   document.body.appendChild(gui.domElement);
   gui.domElement.style.position = "fixed";
