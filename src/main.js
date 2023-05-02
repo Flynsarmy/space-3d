@@ -4,7 +4,6 @@
 
 "use strict";
 
-var qs = require("query-string");
 var glm = require("gl-matrix");
 var saveAs = require("filesaver.js").saveAs;
 var JSZip = require("jszip");
@@ -14,7 +13,7 @@ var Skybox = require("./skybox.js");
 var resolution = 1024;
 
 window.onload = function() {
-  var params = qs.parse(location.hash);
+  var params = Object.fromEntries(new URLSearchParams(location.hash));
 
   var ControlsMenu = function() {
     this.seed = params.seed || generateRandomSeed();
@@ -43,7 +42,7 @@ window.onload = function() {
       }
       if (this.resolution <= 2048) {
         const cubemapData = this._saveCubemap().split(",")[1];
-        zip.file('cubemap.png', cubemapData, { base64: true });    
+        zip.file('cubemap.png', cubemapData, { base64: true });
       }
       zip.generateAsync({ type: "blob" }).then(blob => {
         saveAs(blob, "skybox.zip");
@@ -57,7 +56,7 @@ window.onload = function() {
       const bottom = document.getElementById('texture-bottom');
       const right = document.getElementById('texture-right');
       const back = document.getElementById('texture-back');
-      
+
       // set size of canvas depending on resolution
       var context = cubemapCanvas.getContext('2d');
       context.canvas.width = this.resolution * 4;
@@ -70,8 +69,8 @@ window.onload = function() {
       context.drawImage(bottom, this.resolution, this.resolution * 2);
       context.drawImage(right, this.resolution * 2, this.resolution);
       context.drawImage(back, this.resolution * 3, this.resolution);
-    
-      return cubemapCanvas.toDataURL("image/png");      
+
+      return cubemapCanvas.toDataURL("image/png");
     };
   };
 
@@ -142,7 +141,7 @@ window.onload = function() {
   }
 
   function setQueryString() {
-    location.hash = qs.stringify({
+    location.hash = (new URLSearchParams({
       seed: menu.seed,
       fov: menu.fov,
       pointStars: menu.pointStars,
@@ -151,7 +150,7 @@ window.onload = function() {
       nebulae: menu.nebulae,
       resolution: menu.resolution,
       animationSpeed: menu.animationSpeed
-    });
+    })).toString();
   }
 
   var hideControls = false;

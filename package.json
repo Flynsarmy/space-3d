@@ -4,16 +4,15 @@
   "description": "Quickly generate procedural 3D space scenes in your browser with WebGL",
   "main": "",
   "dependencies": {
-    "brfs": "^1.4.1",
+    "brfs": "^2.0",
     "filesaver.js": "^1.3.4",
-    "gl-matrix": "^2.3.1",
-    "jszip": "^3.2.2",
-    "query-string": "^3.0.0",
+    "gl-matrix": "^3.4",
+    "jszip": "^3.10.1",
     "rng": "^0.2.2"
   },
   "devDependencies": {
-    "browserify": "^16.5.0",
-    "budo": "^11.6.3"
+    "browserify": "^17",
+    "budo": "^11.8.4"
   },
   "scripts": {
     "start": "budo src/main.js:static/js/bundle.js --live -- -t brfs",
